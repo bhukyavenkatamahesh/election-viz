@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizing Indian Electoral Patterns (2004-2024)</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- D3.js v7 and plugins -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <!-- d3-sankey for flow diagrams -->
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="dashboard-header">
+            <div class="title-section">
+                <h1>Indian Electoral Patterns <span>(2004 - 2024)</span></h1>
+                <p>Exploring trends, swing constituencies & party dynamics across Lok Sabha elections</p>
+            </div>
+            
+            <div class="controls-section">
+                <div class="control-group">
+                    <label>Select Election Year: <span id="current-year-label">2024</span></label>
+                    <div class="slider-container">
+                        <span class="year-tick">2004</span>
+                        <input type="range" id="year-slider" min="0" max="4" value="4" step="1">
+                        <span class="year-tick">2024</span>
+                    </div>
+                </div>
+                
+                <div class="control-group active-filters">
+                    <div id="state-filter-badge" class="filter-badge hidden">
+                        <span>State: <strong id="selected-state-name">All</strong></span>
+                        <button id="clear-state-btn" class="clear-btn">&times;</button>
+                    </div>
+                    <div id="party-filter-badge" class="filter-badge hidden">
+                        <span>Party: <strong id="selected-party-name">All</strong></span>
+                        <button id="clear-party-btn" class="clear-btn">&times;</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- View 1: Choropleth Map -->
+            <section class="panel map-panel">
+                <div class="panel-header">
+                    <h2>Electoral Map</h2>
+                    <span class="subtitle">Winning party by constituency</span>
+                </div>
+                <div id="map-viz" class="viz-container"></div>
+                <div id="map-legend" class="legend-container"></div>
+            </section>
+
+            <!-- View 2: Bump Chart -->
+            <section class="panel bump-panel">
+                <div class="panel-header">
+                    <h2>Party Power Dynamics</h2>
+                    <span class="subtitle">National rank by seats won (Top 10)</span>
+                </div>
+                <div id="bump-viz" class="viz-container"></div>
+            </section>
+
+            <!-- View 3: Sankey Diagram -->
+            <section class="panel sankey-panel">
+                <div class="panel-header">
+                    <h2>Voter Flow Analysis</h2>
+                    <span class="subtitle">Seat shifts between major parties</span>
+                </div>
+                <div id="sankey-viz" class="viz-container"></div>
+            </section>
+
+            <!-- View 4: Scatter Plot -->
+            <section class="panel scatter-panel">
+                <div class="panel-header">
+                    <h2>Candidate Landscape (2004-2019)</h2>
+                    <span class="subtitle">Declared Assets vs. Votes Received</span>
+                </div>
+                <div id="scatter-viz" class="viz-container"></div>
+                <div class="legend-container scatter-legend">
+                    <span class="legend-item"><span class="dot win"></span> Winner</span>
+                    <span class="legend-item"><span class="dot loss"></span> Runner-up/Lost</span>
+                    <span class="legend-item"><span class="circle-size"></span> Radius = Criminal Cases</span>
+                </div>
+            </section>
+            
+        </main>
+        
+        <!-- Tooltip Element -->
+        <div id="global-tooltip" class="tooltip hidden"></div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/bumpchart.js"></script>
+    <script src="js/sankey.js"></script>
+    <script src="js/scatterplot.js"></script>
+</body>
+</html>
