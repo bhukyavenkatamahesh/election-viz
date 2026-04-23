@@ -134,16 +134,26 @@ function setFilter(type, value) {
 // Tooltip helper
 const tooltip = d3.select("#global-tooltip");
 
+function positionTooltip(e) {
+    const node = tooltip.node();
+    const w = node.offsetWidth || 240;
+    const h = node.offsetHeight || 120;
+    const pad = 15;
+    // Flip to the left/above the cursor when it would overflow the viewport.
+    let left = e.pageX + pad;
+    let top = e.pageY + pad;
+    if (left + w > window.innerWidth) left = e.pageX - w - pad;
+    if (top + h > window.innerHeight) top = e.pageY - h - pad;
+    tooltip.style("left", left + "px").style("top", top + "px");
+}
+
 function showTooltip(html, e) {
-    tooltip.html(html)
-        .classed("hidden", false)
-        .style("left", (e.pageX + 15) + "px")
-        .style("top", (e.pageY + 15) + "px");
+    tooltip.html(html).classed("hidden", false);
+    positionTooltip(e);
 }
 
 function moveTooltip(e) {
-    tooltip.style("left", (e.pageX + 15) + "px")
-           .style("top", (e.pageY + 15) + "px");
+    positionTooltip(e);
 }
 
 function hideTooltip() {

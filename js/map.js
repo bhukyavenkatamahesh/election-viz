@@ -1,31 +1,48 @@
 class MapView {
     constructor(containerId) {
         this.container = d3.select(containerId);
-        this.svg = this.container.append('svg');
-        this.width = parseInt(this.container.style('width'));
-        this.height = parseInt(this.container.style('height'));
+        const rect = this.container.node().getBoundingClientRect();
+        // Guard against 0-size panels (flexbox not yet resolved): fall back to
+        // a reasonable default so fitSize doesn't collapse India to a point.
+        this.width = rect.width > 50 ? rect.width : 600;
+        this.height = rect.height > 50 ? rect.height : 600;
 
-        // Define a responsive projection
+        this.svg = this.container.append('svg')
+            .attr('viewBox', `0 0 ${this.width} ${this.height}`)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .style('background', 'var(--panel-bg)')
+            .style('display', 'block');
+
+        // Explicit panel-colored background rect so the SVG can't inherit a
+        // stray fill from global CSS or browser extensions.
+        this.svg.append('rect')
+            .attr('width', this.width)
+            .attr('height', this.height)
+            .attr('fill', '#161b22');
+
+        // Map Data (needed before fitSize)
+        this.geoData = state.geoData;
+
+        // fitSize auto-picks scale & translate so all of India fits the panel
+        // — avoids Mercator over-stretch pushing Kashmir off the top.
         this.projection = d3.geoMercator()
-            .center([82.8, 22.5]) // Center of India
-            .scale(this.height * 1.5) // Adjust scale based on container height
-            .translate([this.width / 2, this.height / 2]);
+            .fitSize([this.width, this.height], this.geoData);
 
         this.path = d3.geoPath().projection(this.projection);
-        
-        // Groups for drawing
+
         this.g = this.svg.append("g");
-        
-        // Zoom behavior
-        const zoom = d3.zoom()
+
+        this.zoom = d3.zoom()
             .scaleExtent([1, 8])
             .on("zoom", (event) => {
                 this.g.attr("transform", event.transform);
             });
-        this.svg.call(zoom);
-
-        // Map Data
-        this.geoData = state.geoData;
+        this.svg.call(this.zoom);
+        // Double-click on the map resets zoom.
+        this.svg.on("dblclick.zoom", null);
+        this.svg.on("dblclick", () => {
+            this.svg.transition().duration(500).call(this.zoom.transform, d3.zoomIdentity);
+        });
         
         // Cache for fast filtering: { '2024': { 'PC_NAME': {party: 'BJP', margin: '...', ...} } }
         this.electionData = {};
@@ -91,10 +108,13 @@ class MapView {
         let html = `<div class="tooltip-title">${pcPropName} (${stPropName}) - ${yearStr}</div>`;
         
         if (elecData) {
+            const marginPct = elecData.Total_Votes_Const > 0
+                ? (elecData.Margin / elecData.Total_Votes_Const * 100).toFixed(1)
+                : "—";
             html += `
                 <div class="tooltip-row"><span>Winner:</span> <span class="tooltip-val">${elecData.Candidate}</span></div>
                 <div class="tooltip-row"><span>Party:</span> <span class="tooltip-val" style="color: ${getPartyColor(elecData.Party)}">${elecData.Party}</span></div>
-                <div class="tooltip-row"><span>Margin:</span> <span class="tooltip-val">${elecData.Margin.toLocaleString()} votes</span></div>
+                <div class="tooltip-row"><span>Margin:</span> <span class="tooltip-val">${elecData.Margin.toLocaleString()} votes (${marginPct}%)</span></div>
             `;
         } else {
             html += `<div class="tooltip-row"><em>No data available</em></div>`;
@@ -107,16 +127,23 @@ class MapView {
         const yearStr = year.toString();
         const t = d3.transition().duration(500);
 
+        // Margin-of-victory certainty encoding: narrow wins are washed toward
+        // neutral gray; safe seats keep full party color. Scale saturates at 20%.
+        const marginMix = d3.scaleLinear().domain([0, 0.2]).range([0, 1]).clamp(true);
+        const neutral = "#3a3f47";
+
         this.g.selectAll(".constituency")
             .transition(t)
             .style("fill", d => {
                 const pcPropName = d.properties.pc_name ? d.properties.pc_name.toUpperCase() : "UNKNOWN";
                 const elecData = this.electionData[yearStr][pcPropName];
-                
+
                 if (!elecData) return "#222"; // Missing data
-                
-                // Color based on party
-                return getPartyColor(elecData.Party);
+
+                const marginPct = elecData.Total_Votes_Const > 0
+                    ? elecData.Margin / elecData.Total_Votes_Const
+                    : 0;
+                return d3.interpolateRgb(neutral, getPartyColor(elecData.Party))(marginMix(marginPct));
             })
             .style("opacity", d => {
                 // Filter Logic

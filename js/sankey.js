@@ -42,7 +42,7 @@ class SankeyView {
             return;
         }
 
-        let validElections = [2009, 2014, 2019, 2024];
+        let validElections = [2004, 2009, 2014, 2019, 2024];
 
         // Filter data
         let flowData = state.winnersData.filter(d => validElections.includes(parseInt(d.YEAR)));
@@ -74,7 +74,8 @@ class SankeyView {
                 let p1 = pcHistory[pc][y1];
                 let p2 = pcHistory[pc][y2];
 
-                // Only trace flow if the constituency existed in BOTH elections (no redistricting loss locally)
+                // 2004→2009 spans the 2008 delimitation, so only PCs whose names
+                // survived unchanged contribute to that transition.
                 if (p1 && p2) {
                     let sourceId = `${p1}_${y1}`;
                     let targetId = `${p2}_${y2}`;
