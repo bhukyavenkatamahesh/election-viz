@@ -164,6 +164,28 @@ input[type=range]::-webkit-slider-runnable-track {
     font-weight: 600;
 }
 
+.split-viz {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.75fr);
+    gap: 1rem;
+    flex: 1;
+    min-height: 360px;
+    padding: 0.75rem;
+}
+
+.split-viz > div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.split-viz h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 0.4rem;
+}
+
 .subtitle {
     font-size: 0.8rem;
     color: var(--text-secondary);
@@ -343,4 +365,49 @@ svg {
 }
 .candidate-dot.loser {
     fill: #444;
+}
+
+.turnout-bar {
+    fill: #58a6ff;
+    opacity: 0.82;
+}
+
+.turnout-bar:hover {
+    opacity: 1;
+}
+
+.coverage-note,
+.small-note,
+.gender-title {
+    fill: var(--text-secondary);
+    font-size: 10px;
+}
+
+.gender-segment {
+    stroke: var(--panel-bg);
+    stroke-width: 1px;
+}
+
+.gender-label {
+    fill: var(--bg-color);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+@media (max-width: 980px) {
+    .dashboard-header,
+    .controls-section {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .dashboard-grid,
+    .split-viz {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel {
+        min-height: 420px;
+    }
 }

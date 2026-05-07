@@ -17,13 +17,19 @@ import csv
 import time
 import re
 import os
-import requests
-from bs4 import BeautifulSoup
+import html
+from urllib.parse import urljoin
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 
-# MyNeta Lok Sabha election URLs (use www subdomain)
+# MyNeta Lok Sabha election URLs
 MYNETA_URLS = {
-    2019: "https://www.myneta.info/LokSabha2019/",
-    2024: "https://www.myneta.info/LokSabha2024/",
+    2019: "https://myneta.info/LokSabha2019/",
+    2024: "https://myneta.info/LokSabha2024/",
+}
+
+FALLBACK_CONSTITUENCY_ID_RANGES = {
+    2024: range(1, 650),
 }
 
 HEADERS = {
@@ -46,87 +52,100 @@ def parse_money(text):
         return 0
 
 
+def fetch_html(url):
+    request = Request(url, headers=HEADERS)
+    with urlopen(request, timeout=30) as response:
+        return response.read().decode("utf-8", errors="replace")
+
+
+def strip_tags(fragment):
+    fragment = re.sub(r"<br\s*/?>", "\n", fragment, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", fragment)
+    return html.unescape(text).strip()
+
+
 def get_constituency_links(base_url):
     """Get all constituency page links from the main election page."""
     print(f"Fetching constituency list from {base_url}...")
-    resp = requests.get(base_url, headers=HEADERS, timeout=30)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-    
     links = []
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
+    page = fetch_html(base_url)
+    for match in re.finditer(r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', page, re.IGNORECASE | re.DOTALL):
+        href = match.group(1)
         if "action=show_candidates" in href and "constituency_id" in href:
-            # Make sure URL uses www subdomain
-            if href.startswith("http"):
-                full_url = href
-            else:
-                full_url = base_url.rstrip("/") + "/" + href.lstrip("/")
-            # Ensure www
-            full_url = full_url.replace("://myneta.info", "://www.myneta.info")
-            constituency_name = a.get_text(strip=True)
+            full_url = urljoin(base_url, href)
+            constituency_name = strip_tags(match.group(2))
             links.append((constituency_name, full_url))
     
     print(f"  Found {len(links)} constituencies")
     return links
 
 
+def get_fallback_constituency_links(year, base_url):
+    return [
+        (
+            f"constituency_id={constituency_id}",
+            urljoin(base_url, f"index.php?action=show_candidates&constituency_id={constituency_id}")
+        )
+        for constituency_id in FALLBACK_CONSTITUENCY_ID_RANGES.get(year, [])
+    ]
+
+
 def scrape_constituency_candidates(url, constituency_name):
     """Scrape candidate details from a constituency page."""
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=30)
-        resp.raise_for_status()
-    except requests.RequestException as e:
+        page = fetch_html(url)
+    except (URLError, HTTPError, TimeoutError) as e:
         print(f"    WARNING: Failed to fetch {constituency_name}: {e}")
         return []
-    
-    soup = BeautifulSoup(resp.text, "html.parser")
+
+    heading_match = re.search(r"List of Candidates\s*-\s*(.*?)(?:\(|</)", page, re.IGNORECASE | re.DOTALL)
+    if heading_match:
+        heading = strip_tags(heading_match.group(1))
+        if ":" in heading:
+            constituency_name = heading.split(":", 1)[0].strip()
+        elif heading:
+            constituency_name = heading.strip()
+
     candidates = []
-    
-    # MyNeta uses div.w3-responsive > table
-    responsive_div = soup.find("div", {"class": "w3-responsive"})
-    if responsive_div:
-        table = responsive_div.find("table")
-    else:
-        # Fallback: find any table
-        table = soup.find("table")
-    
+
+    tables = re.findall(r"<table\b.*?</table>", page, flags=re.IGNORECASE | re.DOTALL)
+    table = max(tables, key=len, default="")
     if not table:
         print(f"    WARNING: No table found for {constituency_name}")
         return []
-    
-    rows = table.find_all("tr")
+
+    rows = re.findall(r"<tr\b.*?</tr>", table, flags=re.IGNORECASE | re.DOTALL)
     for row in rows[1:]:  # skip header row
-        cols = row.find_all("td")
+        cols = [strip_tags(col) for col in re.findall(r"<td\b.*?>(.*?)</td>", row, flags=re.IGNORECASE | re.DOTALL)]
         if len(cols) < 7:
             continue
         
         # Columns: SNo, Candidate, Party, Criminal Cases, Education, Age, Total Assets, Liabilities
-        candidate_text = cols[1].get_text(strip=True) if len(cols) > 1 else ""
+        candidate_text = cols[1] if len(cols) > 1 else ""
         # Remove "Winner" suffix if present
         candidate_text = candidate_text.replace("(Winner)", "").replace("Winner", "").strip()
         
-        criminal_text = cols[3].get_text(strip=True) if len(cols) > 3 else "0"
+        criminal_text = cols[3] if len(cols) > 3 else "0"
         try:
             criminal_cases = int(criminal_text)
         except ValueError:
             criminal_cases = 0
         
-        age_text = cols[5].get_text(strip=True) if len(cols) > 5 else ""
+        age_text = cols[5] if len(cols) > 5 else ""
         try:
             age = int(age_text)
         except ValueError:
             age = 0
         
-        assets_text = cols[6].get_text(strip=True) if len(cols) > 6 else "0"
-        liabilities_text = cols[7].get_text(strip=True) if len(cols) > 7 else "0"
+        assets_text = cols[6] if len(cols) > 6 else "0"
+        liabilities_text = cols[7] if len(cols) > 7 else "0"
         
         candidate = {
             "Candidate": candidate_text,
             "Constituency": constituency_name,
-            "Party": cols[2].get_text(strip=True) if len(cols) > 2 else "",
+            "Party": cols[2] if len(cols) > 2 else "",
             "Criminal_Cases": criminal_cases,
-            "Education": cols[4].get_text(strip=True) if len(cols) > 4 else "",
+            "Education": cols[4] if len(cols) > 4 else "",
             "Age": age,
             "Total_Assets": parse_money(assets_text),
             "Total_Liabilities": parse_money(liabilities_text),
@@ -144,6 +163,10 @@ def scrape_election(year):
     
     base_url = MYNETA_URLS[year]
     constituencies = get_constituency_links(base_url)
+
+    if len(constituencies) < 100:
+        print("  Direct constituency links look incomplete; scanning numeric constituency IDs...")
+        constituencies = get_fallback_constituency_links(year, base_url)
     
     if not constituencies:
         print("ERROR: No constituencies found. The page structure may have changed.")
@@ -157,7 +180,7 @@ def scrape_election(year):
             c["Year"] = year
         all_candidates.extend(candidates)
         print(f" {len(candidates)} candidates")
-        time.sleep(0.5)  # Be polite — 0.5 second between requests
+        time.sleep(0.1)  # Be polite while keeping full-election scrapes practical.
     
     # Write CSV
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "candidates")

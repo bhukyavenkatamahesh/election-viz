@@ -14,7 +14,9 @@ const state = {
     candidatesData: [],  // Master results
     winnersData: [],     // Winner map data
     partyRanks: [],      // Bump chart data
-    geoData: null        // TopoJSON/GeoJSON
+    geoData: null,       // TopoJSON/GeoJSON
+    participationData: [],
+    candidateGenderData: []
 };
 
 // Global Party Color Mapping
@@ -40,24 +42,28 @@ function getPartyColor(party) {
 }
 
 // Global View Instances
-let mapView, bumpView, scatterView, sankeyView;
+let mapView, bumpView, scatterView, sankeyView, participationView;
 
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Loading datasets...");
     try {
         // Load datasets concurrently
-        const [masterCSV, winnersCSV, ranksCSV, topoData] = await Promise.all([
+        const [masterCSV, winnersCSV, ranksCSV, topoData, participationCSV, genderCSV] = await Promise.all([
             d3.csv('public/data/elections_master.csv', d3.autoType),
             d3.csv('public/data/winners_map.csv', d3.autoType),
             d3.csv('public/data/party_ranks.csv', d3.autoType),
-            d3.json('public/data/india_pc_2019_simplified.geojson')  // Need to verify filename
+            d3.json('public/data/india_pc_2019_simplified.geojson'),
+            d3.csv('public/data/participation_summary.csv', d3.autoType),
+            d3.csv('public/data/candidate_gender_summary.csv', d3.autoType)
         ]);
 
         state.candidatesData = masterCSV;
         state.winnersData = winnersCSV;
         state.partyRanks = ranksCSV;
         state.geoData = topoData;
+        state.participationData = participationCSV;
+        state.candidateGenderData = genderCSV;
 
         console.log("Data loaded successfully!");
         
@@ -69,6 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         bumpView = new BumpChartView('#bump-viz');
         scatterView = new ScatterPlotView('#scatter-viz');
         sankeyView = new SankeyView('#sankey-viz');
+        participationView = new ParticipationView('#participation-viz');
         
         // force initial render
         updateViews();
@@ -122,6 +129,7 @@ function updateViews() {
     if(bumpView) bumpView.render(state.selectedState); // Bump chart shows all years
     if(scatterView) scatterView.render(currentYear, state.selectedState, state.selectedParty);
     if(sankeyView) sankeyView.render(state.selectedState); // Sankey shows all years flow
+    if(participationView) participationView.render(currentYear, state.selectedState);
 }
 
 // Method for Views to update global state (Brushing)

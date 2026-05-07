@@ -1,5 +1,16 @@
 {
-  "dependencies": {
-    "puppeteer": "^24.39.1"
+  "name": "election-viz",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive D3 dashboard for Indian Lok Sabha election patterns, 2004-2024.",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "build:data": "python3 Data/clean_data.py",
+    "build:site": "node scripts/build_site.js",
+    "verify:data": "python3 Data/verify_data.py",
+    "test": "node scripts/validate_project.js"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
