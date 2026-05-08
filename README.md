@@ -102,8 +102,7 @@ Vega-Lite didn't fit the bespoke margin-encoded choropleth we wanted.
    Sena 2022 split) appear as separate entities rather than reconciled.
 6. **Repository size.** Only raw sources used by the cleaning pipeline remain
    checked in. Unused map archives, assembly data, member rosters, village
-   mappings, and the proposal PDF were removed from the project tree; GitHub
-   Pages deploys only the static dashboard bundle generated in `dist/`.
+   mappings, and the proposal PDF were removed from the project tree.
 
 ## Repo layout
 
@@ -120,8 +119,7 @@ Vega-Lite didn't fit the bespoke margin-encoded choropleth we wanted.
 │   └── participation.js         # Turnout + candidate gender panel
 ├── public/data/                 # Cleaned CSVs + GeoJSON (browser-loaded)
 ├── Data/                        # Raw sources + cleaning scripts
-├── scripts/                     # Validation and static deploy build
-├── .github/workflows/           # CI and GitHub Pages deployment
+├── scripts/                     # Validation and static deploy build helpers
 ├── REPORT.md                    # Final report
 └── README.md                    # You are here
 ```
