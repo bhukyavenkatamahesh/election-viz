@@ -50,7 +50,7 @@ class ParticipationView {
                 .attr("y", this.height / 2)
                 .attr("text-anchor", "middle")
                 .style("fill", "#888")
-                .text("Turnout and candidate gender data are not available for this selection.");
+                .text("Participation and gender data are unavailable for this selection. Try 2014 or 2019.");
             return;
         }
 

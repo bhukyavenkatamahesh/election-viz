@@ -89,7 +89,7 @@ class ScatterPlotView {
                 .attr("class", "no-data-msg")
                 .attr("x", this.width/2).attr("y", this.height/2)
                 .attr("text-anchor", "middle").style("fill", "#888")
-                .text("Candidate Affidavits (Assets/Criminal Records) not available for this selection.");
+                .text("Affidavit data is unavailable for this selection. Try 2019 for the richest candidate coverage.");
             return;
         } else {
             this.svg.selectAll(".no-data-msg").remove();
@@ -136,7 +136,7 @@ class ScatterPlotView {
             .on("mouseover", function(event, d) {
                 d3.select(this).style("stroke", "#fff").style("opacity", 1).style("stroke-width", "2px");
                 showTooltip(`
-                    <div class="tooltip-title">${d.Candidate} ${d.Is_Winner ? '🌟 (Winner)' : ''}</div>
+                    <div class="tooltip-title">${d.Candidate} ${d.Is_Winner ? '(Winner)' : ''}</div>
                     <div class="tooltip-row"><span>Party:</span> <span class="tooltip-val" style="color:${getPartyColor(d.Party)}">${d.Party}</span></div>
                     <div class="tooltip-row"><span>Constituency:</span> <span class="tooltip-val">${d.Constituency}</span></div>
                     <div class="tooltip-row"><span>Votes:</span> <span class="tooltip-val">${d.Votes.toLocaleString()}</span></div>

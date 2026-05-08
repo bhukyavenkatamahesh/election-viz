@@ -17,7 +17,9 @@ npm start
 # then open http://localhost:8000
 ```
 
-Tested on Chrome / Safari latest. Requires an internet connection on first
+Tested on Chrome / Safari latest. The dashboard opens on 2019 because that is
+the newest year with the richest source coverage across the map, affidavit
+scatter, turnout, and gender panels. Requires an internet connection on first
 load to pull D3 v7 and d3-sankey from CDN.
 
 Useful maintenance commands:

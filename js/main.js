@@ -6,7 +6,7 @@
 // Global State
 const state = {
     years: [2004, 2009, 2014, 2019, 2024],
-    yearIdx: 4, // Default to 2024
+    yearIdx: 3, // Default to 2019 because all dashboard panels have source coverage.
     selectedState: null, // "All"
     selectedParty: null, // "All"
     
