@@ -39,15 +39,17 @@
                 <div class="control-group active-filters">
                     <div id="state-filter-badge" class="filter-badge hidden">
                         <span>State: <strong id="selected-state-name">All</strong></span>
-                        <button id="clear-state-btn" class="clear-btn">&times;</button>
+                        <button id="clear-state-btn" class="clear-btn" aria-label="Clear state filter">&times;</button>
                     </div>
                     <div id="party-filter-badge" class="filter-badge hidden">
                         <span>Party: <strong id="selected-party-name">All</strong></span>
-                        <button id="clear-party-btn" class="clear-btn">&times;</button>
+                        <button id="clear-party-btn" class="clear-btn" aria-label="Clear party filter">&times;</button>
                     </div>
                 </div>
             </div>
         </header>
+
+        <div id="app-status" class="app-status">Loading election data...</div>
 
         <!-- Main Dashboard Grid -->
         <main class="dashboard-grid">

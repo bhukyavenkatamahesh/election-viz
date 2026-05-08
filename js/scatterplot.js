@@ -12,8 +12,9 @@ class ScatterPlotView {
 
     setupSVG() {
         this.container.html("");
-        this.width = parseInt(this.container.style('width')) - this.margin.left - this.margin.right;
-        this.height = parseInt(this.container.style('height')) - this.margin.top - this.margin.bottom;
+        const size = getChartSize(this.container, this.margin, 760, 360);
+        this.width = size.width;
+        this.height = size.height;
         
         this.svg = this.container.append('svg')
             .attr("viewBox", `0 0 ${this.width + this.margin.left + this.margin.right} ${this.height + this.margin.top + this.margin.bottom}`)
@@ -84,6 +85,8 @@ class ScatterPlotView {
         // If no data (e.g. 2024 or state has no matches), fallback message
         if (data.length === 0) {
             this.dotsGroup.selectAll("*").remove();
+            this.xAxis.selectAll("*").remove();
+            this.yAxis.selectAll("*").remove();
             this.svg.selectAll(".no-data-msg").remove();
             this.svg.append("text")
                 .attr("class", "no-data-msg")

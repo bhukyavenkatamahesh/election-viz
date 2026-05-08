@@ -1,14 +1,15 @@
 class ParticipationView {
     constructor(containerId) {
         this.container = d3.select(containerId);
-        this.margin = { top: 20, right: 24, bottom: 40, left: 56 };
+        this.margin = { top: 24, right: 24, bottom: 68, left: 56 };
         this.setupSVG();
     }
 
     setupSVG() {
         this.container.html("");
-        this.width = parseInt(this.container.style("width")) - this.margin.left - this.margin.right;
-        this.height = parseInt(this.container.style("height")) - this.margin.top - this.margin.bottom;
+        const size = getChartSize(this.container, this.margin, 520, 360);
+        this.width = size.width;
+        this.height = size.height;
 
         this.svg = this.container.append("svg")
             .attr("viewBox", `0 0 ${this.width + this.margin.left + this.margin.right} ${this.height + this.margin.top + this.margin.bottom}`)
@@ -22,7 +23,7 @@ class ParticipationView {
         this.xAxis = this.svg.append("g").attr("transform", `translate(0,${this.height})`);
         this.yAxis = this.svg.append("g");
         this.chartGroup = this.svg.append("g");
-        this.genderGroup = this.svg.append("g").attr("transform", `translate(0,${Math.max(110, this.height - 78)})`);
+        this.genderGroup = this.svg.append("g").attr("transform", `translate(0,${Math.max(118, this.height - 70)})`);
     }
 
     render(year, selectedState) {
@@ -71,10 +72,29 @@ class ParticipationView {
             .sort((a, b) => d3.descending(a.Turnout, b.Turnout))
             .slice(0, state.selectedState ? 12 : 10);
 
+        this.chartGroup.selectAll(".turnout-empty").remove();
+        if (byState.length === 0) {
+            this.chartGroup.selectAll(".turnout-bar").remove();
+            this.xAxis.selectAll("*").remove();
+            this.yAxis.selectAll("*").remove();
+            this.chartGroup.append("text")
+                .attr("class", "turnout-empty")
+                .attr("x", this.width / 2)
+                .attr("y", 52)
+                .attr("text-anchor", "middle")
+                .text(`Turnout coverage is unavailable for ${year}.`);
+            return;
+        }
+
         this.xScale.domain(byState.map(d => d.State));
         this.yScale.domain([0, Math.max(80, d3.max(byState, d => d.Turnout) || 80)]).nice();
 
-        this.xAxis.call(d3.axisBottom(this.xScale).tickFormat(d => d.length > 10 ? `${d.slice(0, 9)}...` : d));
+        this.xAxis.call(d3.axisBottom(this.xScale).tickFormat(d => d.length > 11 ? `${d.slice(0, 10)}...` : d));
+        this.xAxis.selectAll("text")
+            .attr("text-anchor", "end")
+            .attr("transform", "rotate(-30)")
+            .attr("dx", "-0.45em")
+            .attr("dy", "0.25em");
         this.yAxis.call(d3.axisLeft(this.yScale).ticks(5).tickFormat(d => `${d}%`));
 
         const bars = this.chartGroup.selectAll(".turnout-bar").data(byState, d => d.State);
@@ -103,7 +123,10 @@ class ParticipationView {
 
         bars.exit().remove();
 
-        const note = rows.find(d => d.Coverage_Note)?.Coverage_Note || "";
+        const sourceNote = rows.find(d => d.Coverage_Note)?.Coverage_Note || "";
+        const note = sourceNote.startsWith("Approximate")
+            ? "2019 turnout is approximate; NOTA may be excluded."
+            : sourceNote ? "Official turnout where source data is available." : "";
         const notes = this.chartGroup.selectAll(".coverage-note").data(note ? [note] : []);
         notes.enter()
             .append("text")

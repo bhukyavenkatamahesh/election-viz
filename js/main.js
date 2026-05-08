@@ -41,6 +41,26 @@ function getPartyColor(party) {
     return partyColors[party] || partyColors['OTHERS'];
 }
 
+function normalizeConstituencyName(name) {
+    return (name || "")
+        .toString()
+        .toUpperCase()
+        .replace(/&/g, "AND")
+        .replace(/[^A-Z0-9]+/g, "");
+}
+
+function getChartSize(container, margin, fallbackWidth = 640, fallbackHeight = 320) {
+    const node = container.node();
+    const rect = node ? node.getBoundingClientRect() : {};
+    const rawWidth = rect.width || parseInt(container.style("width"), 10) || fallbackWidth;
+    const rawHeight = rect.height || parseInt(container.style("height"), 10) || fallbackHeight;
+
+    return {
+        width: Math.max(260, rawWidth - margin.left - margin.right),
+        height: Math.max(190, rawHeight - margin.top - margin.bottom)
+    };
+}
+
 // Global View Instances
 let mapView, bumpView, scatterView, sankeyView, participationView;
 
@@ -66,6 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         state.candidateGenderData = genderCSV;
 
         console.log("Data loaded successfully!");
+        document.getElementById('app-status').classList.add('hidden');
         
         // Initialize UI wire-up
         initControls();
@@ -81,6 +102,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateViews();
     } catch (e) {
         console.error("Error loading data:", e);
+        const status = document.getElementById('app-status');
+        status.classList.remove('hidden');
+        status.textContent = "Data could not be loaded. Serve the project over HTTP and check the data files in public/data.";
+        status.classList.add('error');
     }
 });
 

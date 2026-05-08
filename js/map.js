@@ -46,6 +46,7 @@ class MapView {
         
         // Cache for fast filtering: { '2024': { 'PC_NAME': {party: 'BJP', margin: '...', ...} } }
         this.electionData = {};
+        this.electionDataNormalized = {};
         this.initDataCache();
 
         // Draw Base Map
@@ -57,10 +58,12 @@ class MapView {
         state.winnersData.forEach(d => {
             const yearStr = d.YEAR.toString();
             if (!this.electionData[yearStr]) this.electionData[yearStr] = {};
+            if (!this.electionDataNormalized[yearStr]) this.electionDataNormalized[yearStr] = {};
             
             // The GeoJSON PC Names often differ slightly from our dataset. We'll uppercase both for matching.
             const pcName = d.Constituency ? d.Constituency.toUpperCase() : "";
             this.electionData[yearStr][pcName] = d;
+            this.electionDataNormalized[yearStr][normalizeConstituencyName(pcName)] = d;
         });
 
         // Quick state boundary extraction (dissolving PCs by state is complex without topojson, 
@@ -103,7 +106,7 @@ class MapView {
         const stPropName = d.properties.st_name ? d.properties.st_name.toUpperCase() : "UNKNOWN";
         const yearStr = state.years[state.yearIdx].toString();
         
-        const elecData = this.electionData[yearStr][pcPropName];
+        const elecData = this.getElectionData(yearStr, pcPropName);
         
         let html = `<div class="tooltip-title">${pcPropName} (${stPropName}) - ${yearStr}</div>`;
         
@@ -136,7 +139,7 @@ class MapView {
             .transition(t)
             .style("fill", d => {
                 const pcPropName = d.properties.pc_name ? d.properties.pc_name.toUpperCase() : "UNKNOWN";
-                const elecData = this.electionData[yearStr][pcPropName];
+                const elecData = this.getElectionData(yearStr, pcPropName);
 
                 if (!elecData) return "#222"; // Missing data
 
@@ -148,7 +151,7 @@ class MapView {
             .style("opacity", d => {
                 // Filter Logic
                 const dState = d.properties.st_name ? d.properties.st_name.toUpperCase() : null;
-                const elecData = this.electionData[yearStr][d.properties.pc_name ? d.properties.pc_name.toUpperCase() : ""];
+                const elecData = this.getElectionData(yearStr, d.properties.pc_name ? d.properties.pc_name.toUpperCase() : "");
                 const dParty = elecData ? elecData.Party : null;
 
                 let isFaded = false;
@@ -183,5 +186,10 @@ class MapView {
                 .style("background-color", getPartyColor(party));
             item.append("span").text(`${party} (${count})`);
         });
+    }
+
+    getElectionData(yearStr, pcName) {
+        return this.electionData[yearStr]?.[pcName] ||
+            this.electionDataNormalized[yearStr]?.[normalizeConstituencyName(pcName)];
     }
 }

@@ -13,8 +13,9 @@ class SankeyView {
 
     setupSVG() {
         this.container.html(""); // clear
-        this.width = parseInt(this.container.style('width')) - this.margin.left - this.margin.right;
-        this.height = parseInt(this.container.style('height')) - this.margin.top - this.margin.bottom;
+        const size = getChartSize(this.container, this.margin, 680, 320);
+        this.width = size.width;
+        this.height = size.height;
         
         this.svg = this.container.append('svg')
             .attr("viewBox", `0 0 ${this.width + this.margin.left + this.margin.right} ${this.height + this.margin.top + this.margin.bottom}`)
