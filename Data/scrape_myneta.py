@@ -109,7 +109,11 @@ def scrape_constituency_candidates(url, constituency_name):
     candidates = []
 
     tables = re.findall(r"<table\b.*?</table>", page, flags=re.IGNORECASE | re.DOTALL)
-    table = max(tables, key=len, default="")
+    candidate_tables = [
+        table for table in tables
+        if "Criminal Cases" in table and "Total Assets" in table and "Liabilities" in table
+    ]
+    table = candidate_tables[0] if candidate_tables else max(tables, key=len, default="")
     if not table:
         print(f"    WARNING: No table found for {constituency_name}")
         return []

@@ -100,9 +100,10 @@ Vega-Lite didn't fit the bespoke margin-encoded choropleth we wanted.
    2009, and MyNeta-scraped years, but not every source year exposes it.
 5. **Party normalisation** is alias-based. Breakaway factions (e.g. Shiv
    Sena 2022 split) appear as separate entities rather than reconciled.
-6. **Repository size.** Historical raw data remains checked in for
-   reproducibility, but GitHub Pages deploys only the static dashboard bundle
-   generated in `dist/`.
+6. **Repository size.** Only raw sources used by the cleaning pipeline remain
+   checked in. Unused map archives, assembly data, member rosters, village
+   mappings, and the proposal PDF were removed from the project tree; GitHub
+   Pages deploys only the static dashboard bundle generated in `dist/`.
 
 ## Repo layout
 
